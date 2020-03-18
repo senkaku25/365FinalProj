@@ -1,11 +1,6 @@
 package application;
 
-import javax.sound.sampled.AudioFileFormat.Type;
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
-import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.LineUnavailableException;
-import javax.sound.sampled.SourceDataLine;
 
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
@@ -171,7 +166,6 @@ public class Controller extends JPanel{
 							click_counter++;
 							click_counter = click_counter % 2;
 						} catch (LineUnavailableException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					 System.out.println("Current frame: " + currentFrameNumber);
@@ -181,7 +175,6 @@ public class Controller extends JPanel{
 					 try {
 						playSound();
 					} catch (LineUnavailableException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					 capture.release();
@@ -284,13 +277,9 @@ public class Controller extends JPanel{
 			frameText.setText("Frame: 1");
 	
 		}
-		
-		// You don't have to understand how mat2Image() works. 
-		// In short, it converts the image from the Mat format to the Image format
-		// The Mat format is used by the opencv library, and the Image format is used by JavaFX
-		// BTW, you should be able to explain briefly what opencv and JavaFX are after finishing this assignment
 	}
 
+	//put in the histogram code here for the frame
 	protected void playSound() throws LineUnavailableException{
 		Mat grayImage = new Mat();
 		Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
@@ -307,11 +296,6 @@ public class Controller extends JPanel{
 			}
 		}
 		
-		// I used an AudioFormat object and a SourceDataLine object to perform audio output. Feel free to try other options
-        AudioFormat audioFormat = new AudioFormat(sampleRate, sampleSizeInBits, numberOfChannels, true, true);
-        SourceDataLine sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
-        sourceDataLine.open(audioFormat, sampleRate);
-        sourceDataLine.start();
         ObservableList<XYChart.Data<String, Number>> data = FXCollections.<XYChart.Data<String, Number>>observableArrayList();
         byte[] clickBuffer = new byte[numberOfSamplesPerColumn];
     	for (int col = 0; col < width; col++) {
@@ -335,15 +319,8 @@ public class Controller extends JPanel{
             	clickBuffer[t-1] = (byte) (normalizedClickSignal * 0x7F);
             }
         	data.add(new XYChart.Data<String, Number>(Integer.toString(col), averageSignal));
-        	sourceDataLine.write(audioBuffer, 0, numberOfSamplesPerColumn);
         }
     	series.getData().addAll(data);
-    	if(click_counter % 2 == 0) {
-    		System.out.println("click");
-        	sourceDataLine.write(clickBuffer,0,numberOfSamplesPerColumn);	
-    	}
-        sourceDataLine.drain();
-        sourceDataLine.close();
 	}
 	
 	@FXML
@@ -363,7 +340,6 @@ public class Controller extends JPanel{
 			try {
 				playVideo();
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
