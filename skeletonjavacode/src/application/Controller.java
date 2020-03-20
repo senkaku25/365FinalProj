@@ -2,8 +2,10 @@ package application;
 
 import javax.sound.sampled.LineUnavailableException;
 
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
+import org.opencv.utils.Converters;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.videoio.VideoCapture;
@@ -21,6 +23,9 @@ import javafx.scene.chart.XYChart;
 import utilities.Utilities;
 
 import javax.swing.*;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -29,8 +34,6 @@ import javax.swing.filechooser.*;
 import java.io.*;
 
 public class Controller extends JPanel{
-	
-	private double frame_counter = 0;
 	
 	@FXML
 	private ImageView imageView; // the image display window in the GUI
@@ -57,8 +60,11 @@ public class Controller extends JPanel{
 	private Text sampleText;
 	
 	private Mat image;
+	private double[][][] stiRows; //colsxframesxrgb sti
+	private double[][][] stiCols; //rowsxframesxrgb sti
 	private XYChart.Series<String, Number> series;
 	
+	private int numberOfFrames=0;
 	private int width;
 	private int height;
 	private int sampleRate; // sampling frequency
@@ -71,7 +77,7 @@ public class Controller extends JPanel{
 	String filename;
 	int click_counter = 0;
 	double frameSubTime = 30.0;
-	double totalFrameCount = 1;
+	double totalFrameCount = 0;
 	
 	private VideoCapture capture;
 	private ScheduledExecutorService timer;
@@ -86,11 +92,12 @@ public class Controller extends JPanel{
 	private void initialize() {
 		// Optional: You should modify the logic so that the user can change these values
 		// You may also do some experiments with different values
-		width = 64;
-		height = 64;
+		width = 32;
+		height = 32;
 		sampleRate = 8000;
 		sampleSizeInBits = 8;
 		numberOfChannels = 1;
+		numberOfFrames = 0;
 		
 		numberOfQuantizionLevels = 16;
 		
@@ -140,7 +147,8 @@ public class Controller extends JPanel{
 	}
 	
 
-	protected void playVideo() throws InterruptedException {
+	//grabs every frame and creates STI
+	protected void createStiFromVideo() throws InterruptedException {
 		 if (capture != null && capture.isOpened()) { // the video must be open
 		 double framePerSecond = capture.get(Videoio.CAP_PROP_FPS);
 		 slider.setMinorTickCount(1);
@@ -148,44 +156,36 @@ public class Controller extends JPanel{
 		 slider.setMajorTickUnit(frameSubTime);
 		 slider.setShowTickMarks(true);
 		 slider.setShowTickLabels(true);
+	
+		 stiCols = new double[width][(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][3];
+		 stiRows = new double[height][(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][3];
+		 
 		 // create a runnable to fetch new frames periodically
 		Runnable frameGrabber = new Runnable() {
 		 @Override
 		 public void run() { 
 			 Mat frame = new Mat();
-			 if (capture.read(frame)) { // decode successfully
+			 if (capture.read(frame)) { // decode successfully				 
+				javafx.scene.image.Image im = Utilities.mat2Image(frame);
+				Utilities.onFXThread(imageView.imageProperty(), im);
 
-				 javafx.scene.image.Image im = Utilities.mat2Image(frame);
-				 Utilities.onFXThread(imageView.imageProperty(), im);
-				 double currentFrameNumber = capture.get(Videoio.CAP_PROP_POS_FRAMES);
 				 totalFrameCount = capture.get(Videoio.CAP_PROP_FRAME_COUNT);
 				 image = frame;
-				 if(currentFrameNumber % frameSubTime==0 || currentFrameNumber == 0.0) {
-					 try {
-							playSound();
-							click_counter++;
-							click_counter = click_counter % 2;
-						} catch (LineUnavailableException e) {
-							e.printStackTrace();
-						}
-					 System.out.println("Current frame: " + currentFrameNumber);
-				 }
+				 double currentFrameNumber = capture.get(Videoio.CAP_PROP_POS_FRAMES);
 				 slider.setValue(currentFrameNumber / totalFrameCount * (slider.getMax() - slider.getMin()));
-				 if(currentFrameNumber >= totalFrameCount) {
-					 try {
-						playSound();
-					} catch (LineUnavailableException e) {
-						e.printStackTrace();
-					}
-					 capture.release();
-					 slider.setValue(0);
-				 }
+				 try {
+					updateSti();
+				} catch (LineUnavailableException e) {
+					e.printStackTrace();
+				}
+				numberOfFrames++;
+				 
 			 } else { // reach the end of the video
 				 capture.release();
 				 capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
-				 //capture = null;
-				 slider.setValue(0);
-				 Utilities.onFXThread(imageView.imageProperty(), null);
+				 capture = null;
+				 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiRows);
+				 Utilities.onFXThread(imageView.imageProperty(), im);
 				 timer.shutdown();
 			 }
 			 }
@@ -272,12 +272,33 @@ public class Controller extends JPanel{
 			image=null;
 			image = Imgcodecs.imread(filename);
 			imageView.setImage(Utilities.mat2Image(image)); 
-			totalFrameCount = 1;
+			totalFrameCount = 0;
 			slider.setMax(totalFrameCount);
 			frameText.setText("Frame: 1");
 	
 		}
 	}
+	
+	//creates a rowsxframes sti image
+	//creates a columnsxframes sti image
+	protected void updateSti() throws LineUnavailableException{
+		 //resize frame
+		 Mat resizedImage = new Mat();
+		 Imgproc.resize(image, resizedImage, new Size(width, height));
+	
+		//write middle column as sti's column
+		for(int i = 0; i < resizedImage.rows();i++) {
+			double[] pixel = resizedImage.get(i,(int) Math.floor(width/2));
+			stiCols[i][numberOfFrames] = pixel;
+		}
+		
+		//write middle row as sti's column
+		for(int i = 0; i < resizedImage.cols();i++) {
+			double[] pixel = resizedImage.get((int) Math.floor(height/2),i);
+			stiRows[i][numberOfFrames] = pixel;
+		}
+	}
+	
 
 	//put in the histogram code here for the frame
 	protected void playSound() throws LineUnavailableException{
@@ -338,7 +359,7 @@ public class Controller extends JPanel{
 		} else {
 			// Play Video
 			try {
-				playVideo();
+				createStiFromVideo();
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

@@ -42,6 +42,17 @@ public final class Utilities
 		}
 	}
 	
+	public static Image doubleArray2Image(double[][][] frame) {
+		try {
+			return SwingFXUtils.toFXImage(DoubleListToBufferedImage(frame),null);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Cannot convert the double array: " + e);
+			return null;			
+		}
+	}
+	
 	/**
 	 * Generic method for putting element running on a non-JavaFX thread on the
 	 * JavaFX thread, to properly update the UI
@@ -84,6 +95,20 @@ public final class Utilities
 		final byte[] targetPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
 		System.arraycopy(sourcePixels, 0, targetPixels, 0, sourcePixels.length);
 		
+		return image;
+	}
+	
+	private static BufferedImage DoubleListToBufferedImage(double[][][] original) {
+		BufferedImage image = new BufferedImage(original.length, original[0].length, BufferedImage.TYPE_INT_RGB);
+		for(int x = 0; x< original.length;x++) {
+			for(int y = 0; y<original[0].length;y++) {
+				int r = (int)original[x][y][0]; 
+				int g = (int)original[x][y][1]; 
+				int b = (int)original[x][y][2];
+				int rgb = ((r&0x0ff)<<16)|((g&0x0ff)<<8)|(b&0x0ff);
+				image.setRGB(x, y, rgb);
+			}
+		}
 		return image;
 	}
 }
