@@ -62,6 +62,10 @@ public class Controller extends JPanel{
 	private Mat image;
 	private double[][][] stiRows; //colsxframesxrgb sti
 	private double[][][] stiCols; //rowsxframesxrgb sti
+	
+	private int bins;
+	private int[][] stiRowsChromHistogram;
+	
 	private XYChart.Series<String, Number> series;
 	
 	private int numberOfFrames=0;
@@ -160,6 +164,8 @@ public class Controller extends JPanel{
 		 stiCols = new double[width][(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][3];
 		 stiRows = new double[height][(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][3];
 		 
+		 bins = (int)Math.floor(1+log2(height));
+		 stiRowsChromHistogram = new int[bins][bins];//same size as stirows
 		 // create a runnable to fetch new frames periodically
 		Runnable frameGrabber = new Runnable() {
 		 @Override
@@ -173,17 +179,14 @@ public class Controller extends JPanel{
 				 image = frame;
 				 double currentFrameNumber = capture.get(Videoio.CAP_PROP_POS_FRAMES);
 				 slider.setValue(currentFrameNumber / totalFrameCount * (slider.getMax() - slider.getMin()));
-				 try {
-					updateSti();
-				} catch (LineUnavailableException e) {
-					e.printStackTrace();
-				}
+				 updateSti();
 				numberOfFrames++;
 				 
 			 } else { // reach the end of the video
 				 capture.release();
 				 capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
 				 capture = null;
+				 System.out.println(stiRowsChromHistogram);
 				 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiRows);
 				 Utilities.onFXThread(imageView.imageProperty(), im);
 				 timer.shutdown();
@@ -199,6 +202,12 @@ public class Controller extends JPanel{
 		 timer = Executors.newSingleThreadScheduledExecutor();
 		 timer.scheduleAtFixedRate(frameGrabber, 0, Math.round(1000/framePerSecond), TimeUnit.MILLISECONDS);
 		 }
+	}
+	
+
+	public static int log2(int x)
+	{
+	    return (int) (Math.log(x) / Math.log(2));
 	}
     
 	// This method should return the filename of the image to be played
@@ -281,7 +290,7 @@ public class Controller extends JPanel{
 	
 	//creates a rowsxframes sti image
 	//creates a columnsxframes sti image
-	protected void updateSti() throws LineUnavailableException{
+	protected void updateSti(){
 		 //resize frame
 		 Mat resizedImage = new Mat();
 		 Imgproc.resize(image, resizedImage, new Size(width, height));
@@ -290,15 +299,36 @@ public class Controller extends JPanel{
 		for(int i = 0; i < resizedImage.rows();i++) {
 			double[] pixel = resizedImage.get(i,(int) Math.floor(width/2));
 			stiCols[i][numberOfFrames] = pixel;
+			
 		}
 		
-		//write middle row as sti's column
+		//write middle row as sti's column, update chromaticity histogram
 		for(int i = 0; i < resizedImage.cols();i++) {
 			double[] pixel = resizedImage.get((int) Math.floor(height/2),i);
 			stiRows[i][numberOfFrames] = pixel;
+			int [] chroma = getChromaticity(pixel);
+			stiRowsChromHistogram[chroma[0]][chroma[1]]+=1;
+			
 		}
 	}
 	
+	//returns quantisized r and g chroma values
+	protected int[] getChromaticity(double[] pixel){
+		if(pixel[0]==0.0 && pixel[1]==0.0 && pixel[2]==0.0) { //black pixel
+			int [] chromaticity = {0,0};
+			return chromaticity;
+		} else {
+			double rChromaticity = pixel[0]/(pixel[0]+pixel[1]+pixel[2]);
+			double gChromaticity = pixel[1]/(pixel[0]+pixel[1]+pixel[2]);
+			
+			double lvlSize = (1.0/bins);
+			int rQuantisized = (int) Math.round(rChromaticity/lvlSize);
+			int gQuantisized = (int) Math.round(gChromaticity/lvlSize);
+			
+			int [] chromaticity = {rQuantisized,gQuantisized};
+			return chromaticity;
+		}
+	}
 
 	//put in the histogram code here for the frame
 	protected void playSound() throws LineUnavailableException{
