@@ -18,3 +18,5 @@ center row sti: 160 x 100 (rows turned sideways)
 4. histogram each column in the grame
 5. compare histogram at time t with t-1
 6. create a threshold
+
+edit test
