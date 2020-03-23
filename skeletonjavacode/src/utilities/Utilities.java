@@ -1,5 +1,6 @@
 package utilities;
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 
@@ -105,8 +106,9 @@ public final class Utilities
 				int r = (int)original[x][y][0]; 
 				int g = (int)original[x][y][1]; 
 				int b = (int)original[x][y][2];
-				int rgb = ((r&0x0ff)<<16)|((g&0x0ff)<<8)|(b&0x0ff);
-				image.setRGB(x, y, rgb);
+				Color rgbColor = new Color(r,g,b);
+				int rgb = (1 & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
+				image.setRGB(x, y,rgb);
 			}
 		}
 		return image;

@@ -56,8 +56,8 @@ public class Controller extends JPanel{
 	private XYChart.Series<String, Number> series;
 	
 	private int numberOfFrames=0;
-	private int width;
-	private int height;
+	private int cropWidth = 32;
+	private int cropHeight = 32;
 	private int sampleRate; // sampling frequency
 	private int sampleSizeInBits;
 	private int numberOfChannels;
@@ -83,8 +83,7 @@ public class Controller extends JPanel{
 	private void initialize() {
 		// Optional: You should modify the logic so that the user can change these values
 		// You may also do some experiments with different values
-		width = 32;
-		height = 32;
+
 		sampleRate = 8000;
 		sampleSizeInBits = 8;
 		numberOfChannels = 1;
@@ -95,16 +94,6 @@ public class Controller extends JPanel{
 		numberOfSamplesPerColumn = 500;
 		
 		series = new XYChart.Series<>();
-		
-		// assign frequencies for each particular row
-		freq = new double[height]; // Be sure you understand why it is height rather than width
-		freq[height/2-1] = 440.0; // 440KHz - Sound of A (La)
-		for (int m = height/2; m < height; m++) {
-			freq[m] = freq[m-1] * Math.pow(2, 1.0/12.0); 
-		}
-		for (int m = height/2-2; m >=0; m--) {
-			freq[m] = freq[m+1] * Math.pow(2, -1.0/12.0); 
-		}
 
 	}
 	
@@ -119,10 +108,10 @@ public class Controller extends JPanel{
 		 slider.setShowTickMarks(true);
 		 slider.setShowTickLabels(true);
 	
-		 stiCols = new double[width][(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][3];
-		 stiRows = new double[height][(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][3];
+		 stiCols = new double[cropWidth][(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][3];
+		 stiRows = new double[(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][cropHeight][3];
 		 
-		 bins = (int)Math.floor(1+log2(height));
+		 bins = (int)Math.floor(1+log2(cropWidth));
 		 stiRowsChromHistogram = new int[bins][bins];//same size as stirows
 		 // create a runnable to fetch new frames periodically
 		Runnable frameGrabber = new Runnable() {
@@ -130,8 +119,7 @@ public class Controller extends JPanel{
 		 public void run() { 
 			 Mat frame = new Mat();
 			 if (capture.read(frame)) { // decode successfully				 
-				javafx.scene.image.Image im = Utilities.mat2Image(frame);
-				Utilities.onFXThread(imageView.imageProperty(), im);
+
 
 				 totalFrameCount = capture.get(Videoio.CAP_PROP_FRAME_COUNT);
 				 image = frame;
@@ -246,21 +234,19 @@ public class Controller extends JPanel{
 	protected void updateSti(){
 		 //resize frame
 		 Mat resizedImage = new Mat();
-		 Imgproc.resize(image, resizedImage, new Size(width, height));
+		 Imgproc.resize(image, resizedImage, new Size(cropWidth, cropHeight));
+		 
+			javafx.scene.image.Image im = Utilities.mat2Image(resizedImage);
+			Utilities.onFXThread(imageView.imageProperty(), im);
 	
 		//write middle column as sti's column
 		for(int i = 0; i < resizedImage.rows();i++) {
-			double[] pixel = resizedImage.get(i,(int) Math.floor(width/2));
-			stiCols[i][numberOfFrames] = pixel;
-			
+			stiCols[i][numberOfFrames] = resizedImage.get(i,(int) Math.floor(cropWidth/2));
 		}
 		
 		//write middle row as sti's column, update chromaticity histogram
 		for(int i = 0; i < resizedImage.cols();i++) {
-			double[] pixel = resizedImage.get((int) Math.floor(height/2),i);
-			stiRows[i][numberOfFrames] = pixel;
-			int [] chroma = getChromaticity(pixel);
-			stiRowsChromHistogram[chroma[0]][chroma[1]]+=1;
+			stiRows[numberOfFrames][i] = resizedImage.get((int) Math.floor(cropWidth/2),i);
 			
 		}
 	}
@@ -283,20 +269,6 @@ public class Controller extends JPanel{
 		}
 	}
 
-	//put in the histogram code here for the frame
-	protected void playSound() throws LineUnavailableException{
-		Mat grayImage = new Mat();
-		Imgproc.cvtColor(image, grayImage, Imgproc.COLOR_BGR2GRAY);
-		
-		// resize the image
-		Mat resizedImage = new Mat();
-		Imgproc.resize(grayImage, resizedImage, new Size(width, height));
-		
-        ObservableList<XYChart.Data<String, Number>> data = FXCollections.<XYChart.Data<String, Number>>observableArrayList();
-
-    	series.getData().addAll(data);
-	}
-	
 	@FXML
 	protected void playImage(ActionEvent event) throws LineUnavailableException {
 		System.out.println("play button pressed");
