@@ -18,16 +18,6 @@
          <children>
             <HBox prefHeight="85.0" prefWidth="710.0">
                <children>
-         <Text fx:id="sampleText" strokeType="OUTSIDE" text="Sample Rate:" wrappingWidth="74.00006103515625">
-                      <HBox.margin>
-                        <Insets left="35.0" top="10.0" />
-                     </HBox.margin>
-            </Text>
-               <Slider fx:id="sampleSlider" minWidth="-Infinity" prefHeight="14.0" prefWidth="106.0">
-                      <HBox.margin>
-                        <Insets top="10.0" />
-                     </HBox.margin>
-            </Slider>
  				<Button mnemonicParsing="false" onAction="#openImage" prefHeight="40.0" prefWidth="100.0" text="Open">
                      <HBox.margin>
                         <Insets left="20.0" top="10.0" />
@@ -38,16 +28,6 @@
                         <Insets left="20.0" top="10.0" />
                      </HBox.margin>
                   </Button>
-         	<Text fx:id="frameText" strokeType="OUTSIDE" text="Sample FPS:" wrappingWidth="65.19995498657227">
-                      <HBox.margin>
-                        <Insets left="10.0" top="10.0" />
-                     </HBox.margin>
-            </Text>
-                     <Slider fx:id="subFrameSlider" minWidth="-Infinity" prefHeight="14.0" prefWidth="106.0">
-                       <HBox.margin>
-                        <Insets top="10.0" />
-                     </HBox.margin>
-            </Slider>
                </children>
                <opaqueInsets>
                   <Insets left="19.0" />
@@ -97,19 +77,5 @@
       </VBox>
    </children>
    </center>
-   <top>
-      <VBox prefHeight="13.0" prefWidth="654.0" BorderPane.alignment="CENTER">
-         <children>
-            <LineChart fx:id="lineChart" legendVisible="false" prefHeight="73.0" prefWidth="707.0">
-              <xAxis>
-                <CategoryAxis label="column" prefHeight="26.0" prefWidth="630.0" side="BOTTOM" />
-              </xAxis>
-              <yAxis>
-                <NumberAxis label="tone" side="LEFT" />
-              </yAxis>
-            </LineChart>
-         </children>
-      </VBox>
-   </top>
 
 </BorderPane>
