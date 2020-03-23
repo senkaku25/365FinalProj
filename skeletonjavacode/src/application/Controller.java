@@ -284,4 +284,39 @@ public class Controller extends JPanel{
 
 		}
 	}
+	
+
+	protected void createHistogram() {
+		ArrayList<double[][]> histogram = new ArrayList<>();
+		for(int i = 0 ; i < totalFrameCount ; i++) {
+			//TODO::create histogram for all frames...?
+		}
+		
+	}
+	
+	//Calculates I for each column
+	protected void calculateHistogram() {
+		ArrayList<double[]> I = new ArrayList<>();
+		
+		
+		
+	}
+	//I = (sum i) (sum j) min [Ht(i, j), Ht−1(i, j)]
+
+	protected void histogramIntersection(ArrayList<double[][]> histogram) {
+		for(int i = 1 ; 1 <= totalFrameCount ; i++){
+			double[][] previous_frame = histogram.get(i-1);
+			double[][] current_frame = histogram.get(i);
+			
+			double sum = 0.0;
+			for(int n = 0 ; n < bins ; n++) {
+				for(int m = 0 ; m < bins ; m++) {
+					sum+= Math.min(previous_frame[n][m], current_frame[n][m]);)
+				}
+			}
+			//TODO::add sum+ to I
+			
+		}
+		
+	}
 }
