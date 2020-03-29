@@ -114,6 +114,9 @@ public class Controller extends JPanel{
 		 stiCols = new double[cropWidth][(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][3];
 		 stiRows = new double[(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][cropHeight][3];
 		 
+		 double[][][] chromStiRows = createChromaticity(stiRows);
+		 double[][][] chromStiCols = createChromaticity(stiCols);
+		 
 		 bins = (int)Math.floor(1+log2(cropWidth));
 		 stiRowsChromHistogram = new int[bins][bins];//same size as stirows
 		 // create a runnable to fetch new frames periodically
@@ -288,8 +291,26 @@ public class Controller extends JPanel{
 	}
 	
 	//{r, g} = {R, G}/(R + G + B)
-	protected void createChromaticity(double[][][] sti) {
-
+	protected double[][][] createChromaticity(double[][][] sti) {
+		int rows = sti[0].length;
+		int cols = sti[1].length;
+		double[][][] stiChrom = new double[rows][cols][1];
+		for(int i = 0 ; i < rows ; i++) {
+			for(int j = 0 ; j < cols ; j ++) {
+				double red = sti[i][j][0];
+				double green = sti[i][j][1];
+				double blue = sti[i][j][2];
+				int rgb = (int) (red + blue + green);
+				if(rgb == 0) {
+					stiChrom[i][j][0] = 0;
+					stiChrom[i][j][1] = 0;
+				} else {
+					stiChrom[i][j][0] = red/rgb;
+					stiChrom[i][j][1] = green/rgb;
+				}
+			}
+		}
+		return stiChrom;
 		
 	}
 
