@@ -114,11 +114,9 @@ public class Controller extends JPanel{
 		 stiCols = new double[cropWidth][(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][3];
 		 stiRows = new double[(int)capture.get(Videoio.CAP_PROP_FRAME_COUNT)][cropHeight][3];
 		 
-		 double[][][] chromStiRows = createChromaticity(stiRows);
-		 double[][][] chromStiCols = createChromaticity(stiCols);
-		 
-		 bins = (int)Math.floor(1+log2(cropWidth));
-		 stiRowsChromHistogram = new int[bins][bins];//same size as stirows
+
+//		 bins = (int)Math.floor(1+log2(cropWidth));
+//		 stiRowsChromHistogram = new int[bins][bins];//same size as stirows
 		 // create a runnable to fetch new frames periodically
 		Runnable frameGrabber = new Runnable() {
 		 @Override
@@ -131,15 +129,23 @@ public class Controller extends JPanel{
 				 double currentFrameNumber = capture.get(Videoio.CAP_PROP_POS_FRAMES);
 				 slider.setValue(currentFrameNumber / totalFrameCount * (slider.getMax() - slider.getMin()));
 				 updateSti();
+				 
 				numberOfFrames++;
 				 
 			 } else { // reach the end of the video
 				 capture.release();
 				 capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
 				 capture = null;
+
 				 System.out.println(stiRowsChromHistogram);
 				 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiRows);
 				 Utilities.onFXThread(imageView.imageProperty(), im);
+				 
+				 double[][][] chromStiRows = createChromaticity(stiRows);
+				 //double[][][] chromStiCols = createChromaticity(stiCols);
+				 
+				 createHistogram(chromStiRows);
+				 
 				 timer.shutdown();
 			 }
 			 }
@@ -294,7 +300,7 @@ public class Controller extends JPanel{
 	protected double[][][] createChromaticity(double[][][] sti) {
 		int rows = sti[0].length;
 		int cols = sti[1].length;
-		double[][][] stiChrom = new double[rows][cols][1];
+		double[][][] stiChrom = new double[rows][cols][2];
 		for(int i = 0 ; i < rows ; i++) {
 			for(int j = 0 ; j < cols ; j ++) {
 				double red = sti[i][j][0];
@@ -311,14 +317,25 @@ public class Controller extends JPanel{
 			}
 		}
 		return stiChrom;
-		
 	}
+	
 
-	protected void createHistogram(ArrayList<double[][]> Histogram, int rows) {
+	protected void createHistogram(double[][][] sti) {
 		//N = 1 + log2(n), where n=size of data, so a rough idea is to use n = number of rows
+		int rows = sti[0].length;
+		int cols = sti[1].length;
 		bins = (int) log2(rows);
-		int red_axis;
-		int green_axis;
+		
+		double[][] histogram = new double[bins][bins];
+		for(int i = 0 ; i < rows ; i++) {
+			for(int j = 0 ; j < cols ; j++) {
+				double buckets = (1.0/bins);
+				int red_bin = (int) Math.round(sti[i][j][0]/buckets);
+				int green_bin = (int) Math.round(sti[i][j][1]/buckets);
+				
+				histogram[red_bin][green_bin]++;
+			}
+		}
 	}
 	
 	//Calculates I for each column
