@@ -53,6 +53,9 @@ public class Controller extends JPanel{
 	private int bins;
 	private int[][] stiRowsChromHistogram;
 	
+	//Histogram
+	ArrayList<Double> I;
+	
 	private XYChart.Series<String, Number> series;
 	
 	private int numberOfFrames=0;
@@ -119,7 +122,6 @@ public class Controller extends JPanel{
 		 public void run() { 
 			 Mat frame = new Mat();
 			 if (capture.read(frame)) { // decode successfully				 
-
 
 				 totalFrameCount = capture.get(Videoio.CAP_PROP_FRAME_COUNT);
 				 image = frame;
@@ -285,38 +287,41 @@ public class Controller extends JPanel{
 		}
 	}
 	
+	//{r, g} = {R, G}/(R + G + B)
+	protected void createChromaticity(double[][][] sti) {
 
-	protected void createHistogram() {
-		ArrayList<double[][]> histogram = new ArrayList<>();
-		for(int i = 0 ; i < totalFrameCount ; i++) {
-			//TODO::create histogram for all frames...?
-		}
 		
+	}
+
+	protected void createHistogram(ArrayList<double[][]> Histogram, int rows) {
+		//N = 1 + log2(n), where n=size of data, so a rough idea is to use n = number of rows
+		bins = (int) log2(rows);
+		int red_axis;
+		int green_axis;
 	}
 	
 	//Calculates I for each column
-	protected void calculateHistogram() {
-		ArrayList<double[]> I = new ArrayList<>();
-		
-		
-		
-	}
 	//I = (sum i) (sum j) min [Ht(i, j), Ht−1(i, j)]
-
-	protected void histogramIntersection(ArrayList<double[][]> histogram) {
-		for(int i = 1 ; 1 <= totalFrameCount ; i++){
+	protected void calculateHistogram(ArrayList<double[][]> histogram) {
+		I = new ArrayList<>();
+		double sum = 0.0;
+		for(int i = 1 ; i <= totalFrameCount;i++) {
 			double[][] previous_frame = histogram.get(i-1);
 			double[][] current_frame = histogram.get(i);
-			
+			sum+=histogramIntersection(previous_frame,current_frame);
+		}
+		I.add(sum);
+		
+	}
+	
+	//returns min [Ht(i, j), Ht−1(i, j)]
+	protected double histogramIntersection(double[][] previous_frame,double[][] current_frame) {
 			double sum = 0.0;
-			for(int n = 0 ; n < bins ; n++) {
-				for(int m = 0 ; m < bins ; m++) {
-					sum+= Math.min(previous_frame[n][m], current_frame[n][m]);)
+			for(int i = 0 ; i < bins ; i++) {
+				for(int j = 0 ; j < bins ; j++) {
+					sum+= Math.min(previous_frame[i][j], current_frame[i][j]);
 				}
 			}
-			//TODO::add sum+ to I
-			
-		}
-		
+			return sum;
 	}
 }
