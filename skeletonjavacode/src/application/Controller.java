@@ -329,7 +329,7 @@ public class Controller extends JPanel{
 		double[][] histogram = new double[bins][bins];
 		for(int i = 0 ; i < rows ; i++) {
 			for(int j = 0 ; j < cols ; j++) {
-				double buckets = (1.0/bins);
+				double buckets = (1.0/(bins-1));
 				int red_bin = (int) Math.round(sti[i][j][0]/buckets);
 				int green_bin = (int) Math.round(sti[i][j][1]/buckets);
 				
