@@ -50,11 +50,16 @@
    <center>
       <VBox prefHeight="219.0" prefWidth="737.0" BorderPane.alignment="CENTER">
          <children>
-            <ImageView fx:id="imageView" fitHeight="270.0" fitWidth="463.0" pickOnBounds="true" preserveRatio="true">
-               <VBox.margin>
-                  <Insets left="150.0" right="100.0" />
-               </VBox.margin>
-            </ImageView>
+            <HBox prefHeight="100.0" prefWidth="200.0">
+               <children>
+                  <ImageView fx:id="imageView" fitHeight="270.0" fitWidth="263.0" pickOnBounds="true" preserveRatio="true">
+                     <HBox.margin>
+                        <Insets left="100.0" />
+                     </HBox.margin>
+                  </ImageView>
+                  <ImageView fx:id="histView" fitHeight="271.0" fitWidth="304.0" pickOnBounds="true" preserveRatio="true" />
+               </children>
+            </HBox>
             <Slider fx:id="slider" prefHeight="14.0" prefWidth="507.0">
                <VBox.margin>
                   <Insets left="100.0" right="100.0" />

@@ -3,6 +3,7 @@ package utilities;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.util.ArrayList;
 
 import org.opencv.core.Mat;
 
@@ -54,7 +55,7 @@ public final class Utilities
 		}
 	}
 	
-	public static Image histogram2DArray2Image(double[][] histogram, int pixelamount) {
+	public static Image histogram2DArray2Image(ArrayList<ArrayList<Double>> histogram, int pixelamount) {
 		try {
 			return SwingFXUtils.toFXImage(Histogram2DToBufferedImage(histogram, pixelamount),null);
 		}
@@ -111,29 +112,29 @@ public final class Utilities
 	}
 	
 	private static BufferedImage DoubleListToBufferedImage(double[][][] original) {
-		BufferedImage image = new BufferedImage(original.length, original[0].length, BufferedImage.TYPE_INT_RGB);
+		BufferedImage image = new BufferedImage(original[0].length, original.length, BufferedImage.TYPE_INT_RGB);
 		for(int x = 0; x< original.length;x++) {
 			for(int y = 0; y<original[0].length;y++) {
 				int r = (int)original[x][y][0]; 
 				int g = (int)original[x][y][1]; 
 				int b = (int)original[x][y][2];
 				int rgb = (1 & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
-				image.setRGB(x, y,rgb);
+				image.setRGB(y, x,rgb);
 			}
 		}
 		return image;
 	}
 	
-	private static BufferedImage Histogram2DToBufferedImage(double[][] histogram, int pixelamount) {
-		BufferedImage image = new BufferedImage(histogram.length, histogram[0].length, BufferedImage.TYPE_INT_RGB);
-		for(int x = 0; x< histogram.length;x++) {
-			for(int y = 0; y<histogram[0].length;y++) {
-				int grey = (int)Math.floor((histogram[x][y]/pixelamount)*255);
+	private static BufferedImage Histogram2DToBufferedImage(ArrayList<ArrayList<Double>> histogram, int pixelamount) {
+		BufferedImage image = new BufferedImage(histogram.size(), histogram.get(0).size(), BufferedImage.TYPE_INT_RGB);
+		for(int row = 0; row< histogram.size();row++) {
+			for(int col = 0; col<histogram.get(0).size();col++) {
+				int grey = (int)Math.floor((histogram.get(row).get(col)/pixelamount)*255);
 				int r = grey;
 				int g = grey;
 				int b = grey;
 				int rgb = (1 & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
-				image.setRGB(x, y,rgb);
+				image.setRGB(col, row,rgb);
 			}
 		}
 		return image;
