@@ -136,8 +136,6 @@ public class Controller extends JPanel{
 				 capture.release();
 				 capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
 				 capture = null;
-
-				 System.out.println(stiRowsChromHistogram);
 				 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiRows);
 				 Utilities.onFXThread(imageView.imageProperty(), im);
 				 
@@ -324,7 +322,7 @@ public class Controller extends JPanel{
 		//N = 1 + log2(n), where n=size of data, so a rough idea is to use n = number of rows
 		int rows = sti[0].length;
 		int cols = sti[1].length;
-		bins = (int) log2(rows);
+		bins = (int)Math.floor(1+ log2(rows));
 		
 		double[][] histogram = new double[bins][bins];
 		for(int i = 0 ; i < rows ; i++) {
@@ -332,10 +330,11 @@ public class Controller extends JPanel{
 				double buckets = (1.0/(bins-1));
 				int red_bin = (int) Math.round(sti[i][j][0]/buckets);
 				int green_bin = (int) Math.round(sti[i][j][1]/buckets);
-				
 				histogram[red_bin][green_bin]++;
 			}
 		}
+		 javafx.scene.image.Image im = Utilities.histogram2DArray2Image(histogram, rows*cols);
+		 Utilities.onFXThread(imageView.imageProperty(), im);
 	}
 	
 	//Calculates I for each column

@@ -54,6 +54,17 @@ public final class Utilities
 		}
 	}
 	
+	public static Image histogram2DArray2Image(double[][] histogram, int pixelamount) {
+		try {
+			return SwingFXUtils.toFXImage(Histogram2DToBufferedImage(histogram, pixelamount),null);
+		}
+		catch (Exception e)
+		{
+			System.err.println("Cannot convert the double array: " + e);
+			return null;			
+		}
+	}
+	
 	/**
 	 * Generic method for putting element running on a non-JavaFX thread on the
 	 * JavaFX thread, to properly update the UI
@@ -106,11 +117,30 @@ public final class Utilities
 				int r = (int)original[x][y][0]; 
 				int g = (int)original[x][y][1]; 
 				int b = (int)original[x][y][2];
-				Color rgbColor = new Color(r,g,b);
 				int rgb = (1 & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
 				image.setRGB(x, y,rgb);
 			}
 		}
 		return image;
+	}
+	
+	private static BufferedImage Histogram2DToBufferedImage(double[][] histogram, int pixelamount) {
+		BufferedImage image = new BufferedImage(histogram.length, histogram[0].length, BufferedImage.TYPE_INT_RGB);
+		for(int x = 0; x< histogram.length;x++) {
+			for(int y = 0; y<histogram[0].length;y++) {
+				int grey = (int)Math.floor((histogram[x][y]/pixelamount)*255);
+				int r = grey;
+				int g = grey;
+				int b = grey;
+				int rgb = (1 & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
+				image.setRGB(x, y,rgb);
+			}
+		}
+		return image;
+	}
+
+	private static int floor(double d) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }
