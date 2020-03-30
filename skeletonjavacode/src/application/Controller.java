@@ -39,12 +39,11 @@ public class Controller extends JPanel{
 	private ImageView imageView; // the image display window in the GUI (left)
 	
 	@FXML
-	private ImageView hisView; // the image display window in the GUI (right)
+	private ImageView histView; // the image display window in the GUI (right)
 	
 	@FXML
 	private Slider slider;
 	
-
 	@FXML
 	private Text imageTitle;
 	
@@ -117,13 +116,12 @@ public class Controller extends JPanel{
 		 slider.setShowTickLabels(true);
 	
 		 totalFrames = (int)capture.get(Videoio.CAP_PROP_FRAME_COUNT);
-		 stiCols = new double[32][totalFrames][3];
-		 stiRows = new double[32][totalFrames][3];
-		 chromaFrames = new double[totalFrames][32][32][2];
-		 rowI = new ArrayList<ArrayList<Double>>();
-		 colI = new ArrayList<ArrayList<Double>>();
-//		 bins = (int)Math.floor(1+log2(cropWidth));
-//		 stiRowsChromHistogram = new int[bins][bins];//same size as stirows
+		 stiCols = new double[32][totalFrames][3]; //32 x #frames x rgb middle columns
+		 stiRows = new double[32][totalFrames][3]; //32 x #frames x rgb middle rows
+		 chromaFrames = new double[totalFrames][32][32][2]; //#frames x (32x32 frame) x 2 chroma colors
+		 rowI = new ArrayList<ArrayList<Double>>(); //row intersection: 32 x #frames
+		 colI = new ArrayList<ArrayList<Double>>(); //col intersection: 32 x #frames
+		 
 		 // create a runnable to fetch new frames periodically
 		Runnable frameGrabber = new Runnable() {
 		 @Override
@@ -145,12 +143,14 @@ public class Controller extends JPanel{
 				 capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
 				 capture = null;
 				 
-				 //display the sti im
+				 //display the sti using middle rows
 				 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiRows);
 				 Utilities.onFXThread(imageView.imageProperty(), im);
 			
-				 //display the sti histogram
+				 //display the sti histogram using row histogram intersection
 				 chromaHistogramIntersection();
+				 javafx.scene.image.Image im2 = Utilities.histogram2DArray2Image(rowI);
+				 Utilities.onFXThread(histView.imageProperty(), im2);
 				 
 				 timer.shutdown();
 			 }
@@ -308,93 +308,93 @@ public class Controller extends JPanel{
 	//creates histograms from video frame columns and compares them
 	//then uses the histograms to determine a histogram intersection for rows and cols
 	protected void chromaHistogramIntersection() {
-		for(int r = 0; r < 32; r++) {//create rowI
-			//array of the image row r's frame histograms
-			ArrayList<double[][]> rowHistograms = new ArrayList<double[][]>();
-			for(int j = 0; j<totalFrames;j++) {//make a histogram for every frame make a histogram for this row
-				double[][] histogram = createHistogramFromFrameRow(chromaFrames[j], r);//take
+		//for each row r, make a histogram of it for every frame
+		//then compare the frame's histogram to the previous
+		for(int r = 0; r < 32; r++) {
+			ArrayList<double[][]> rowHistograms = new ArrayList<double[][]>();	
+			for(int f = 0; f<totalFrames;f++) {
+				//make a histogram for every frame f make a histogram for this row
+				//add frame f's histogram to row r's histogram array
+				double[][] histogram = createHistogramFromFrameRow(chromaFrames[f], r);
 				rowHistograms.add(histogram);
 			}
-			//calculate row intersection
-			//I = (sum i) (sum j) min [Ht(i, j), Ht-1(i, j)]
-			ArrayList<Double> rI = new ArrayList<Double>();
-			double sum = 0.0;
-			for(int i = 1 ; i < totalFrames;i++) {
-				double[][] previous_frame = rowHistograms.get(i-1);
-				double[][] current_frame = rowHistograms.get(i);
-				sum+=histogramIntersection(previous_frame,current_frame);
-				rI.add(sum);
-			}
-			rowI.add(rI);
+			ArrayList<Double> rowIntersect = getHistogramsIntersection(rowHistograms);	
+			rowI.add(rowIntersect);
 		}
-		
-		for(int c = 0; c < 32; c++) {//create colI
+		//for each col c, make a histogram of it for every frame
+		//then compare the frame's histogram to the previous
+		for(int c = 0; c < 32; c++) {
 			//array of the image row r's frame histograms
 			ArrayList<double[][]> colHistograms = new ArrayList<double[][]>();
-			for(int j = 0; j<totalFrames;j++) {//make a histogram for every frame make a histogram for this row
-				double[][] histogram = createHistogramFromFrameCol(chromaFrames[j], c);//take
+			for(int f = 0; f<totalFrames;f++) {//make a histogram for every frame make a histogram for this row
+				double[][] histogram = createHistogramFromFrameCol(chromaFrames[f], c);//take
 				colHistograms.add(histogram);
 			}
-			//calculate col intersection
-			//I = (sum i) (sum j) min [Ht(i, j), Ht-1(i, j)]
-			ArrayList<Double> cI = new ArrayList<Double>();
-			double sum = 0.0;
-			for(int i = 1; i < totalFrames;i++) {
-				double[][] previous_frame = colHistograms.get(i-1);
-				double[][] current_frame = colHistograms.get(i);
-				sum+=histogramIntersection(previous_frame,current_frame);
-				cI.add(sum);
-			}
-			colI.add(cI);
+			ArrayList<Double> colIntersect = getHistogramsIntersection(colHistograms);
+			colI.add(colIntersect);
 		}
 	}
 	
-	//creates a r x g 2d chroma histogram from frame row.
+	//creates a r x g 2d chroma histogram from frame row and normalizes the histogram
 	protected double[][] createHistogramFromFrameRow(double[][][] frame, int row) {
 		bins = (int)Math.floor(1+ log2(frame.length));//quantization
 		double sum = 0.0;
 		double[][] histogram = new double[bins][bins];
-		for(int i = 0 ; i < frame[0].length ; i++) {//traverse frame columns in the row
+		for(int i = 0 ; i < frame[row].length ; i++) {//traverse frame columns in the row
 				double buckets = (1.0/(bins-1));
 				int red_bin = (int) Math.round(frame[row][i][0]/buckets);
 				int green_bin = (int) Math.round(frame[row][i][1]/buckets);
 				histogram[red_bin][green_bin]++;
 				sum++;
 		}
-		//"normalize histogram"
+		//normalize histogram: sum of elements in histogram = 1
 		for(int i=0 ; i<bins ; i++)
 			for(int j=0 ; j<bins; j++)
 				histogram[i][j]= histogram[i][j]/sum;
+		
 		return histogram;
 	}
 	
-	//creates a r x g 2d chroma histogram from frame column.
+	//creates a r x g 2d chroma histogram from frame column and normalizes the histogram
 	protected double[][] createHistogramFromFrameCol(double[][][] frame, int col) {
 		bins = (int)Math.floor(1+ log2(frame.length));//quantization
-		double sum = 0.0;
+		double sum = frame.length; //sum of all the pixels
 		double[][] histogram = new double[bins][bins];
 		for(int i = 0 ; i < frame.length ; i++) {//traverse frame rows in the column
 				double buckets = (1.0/(bins-1));
 				int red_bin = (int) Math.round(frame[i][col][0]/buckets);
 				int green_bin = (int) Math.round(frame[i][col][1]/buckets);
 				histogram[red_bin][green_bin]++;
-				sum++;
 		}
-		//"normalize histogram"
+		//normalize histogram: sum of histogram = 1
 		for(int i=0 ; i<bins ; i++)
 			for(int j=0 ; j<bins; j++)
 				histogram[i][j]= histogram[i][j]/sum;
+		
 		return histogram;
 	}
 	
-	//returns min [Ht(i, j), Ht-1(i, j)]
-	protected double histogramIntersection(double[][] previous_frame,double[][] current_frame) {
-			double sum = 0.0;
+	//for every frame histogram in histogramArr, get the previous frame and compare it to the current
+	protected ArrayList<Double> getHistogramsIntersection(ArrayList<double[][]> histogramArr) {
+		ArrayList<Double> intersection = new ArrayList<Double>();
+		for(int i = 1 ; i < histogramArr.size();i++) {
+			double[][] prevFrameHist = histogramArr.get(i-1);
+			double[][] currFrameHist = histogramArr.get(i);
+			double compareHist = calculateHistogramIntersection(prevFrameHist,currFrameHist);
+			intersection.add(compareHist);
+		}
+		return intersection;
+	}
+	
+	//returns the intersection where both t-1 and t frame histograms has values
+	//intersection = (sum i) (sum j) min [Ht(i, j), Ht-1(i, j)]
+	protected double calculateHistogramIntersection(double[][] prevFrameHist,double[][] currFrameHist) {
+			double intersection = 0.0;
 			for(int i = 0 ; i < bins ; i++) {
 				for(int j = 0 ; j < bins ; j++) {
-					sum+= Math.min(previous_frame[i][j], current_frame[i][j]);
+					intersection+= Math.min(prevFrameHist[i][j], currFrameHist[i][j]);
 				}
 			}
-			return sum;
+			return intersection;
 	}
 }

@@ -55,9 +55,9 @@ public final class Utilities
 		}
 	}
 	
-	public static Image histogram2DArray2Image(ArrayList<ArrayList<Double>> histogram, int pixelamount) {
+	public static Image histogram2DArray2Image(ArrayList<ArrayList<Double>> histogram) {
 		try {
-			return SwingFXUtils.toFXImage(Histogram2DToBufferedImage(histogram, pixelamount),null);
+			return SwingFXUtils.toFXImage(Histogram2DToBufferedImage(histogram),null);
 		}
 		catch (Exception e)
 		{
@@ -125,11 +125,11 @@ public final class Utilities
 		return image;
 	}
 	
-	private static BufferedImage Histogram2DToBufferedImage(ArrayList<ArrayList<Double>> histogram, int pixelamount) {
-		BufferedImage image = new BufferedImage(histogram.size(), histogram.get(0).size(), BufferedImage.TYPE_INT_RGB);
+	private static BufferedImage Histogram2DToBufferedImage(ArrayList<ArrayList<Double>> histogram) {
+		BufferedImage image = new BufferedImage(histogram.get(0).size(), histogram.size(), BufferedImage.TYPE_INT_RGB);
 		for(int row = 0; row< histogram.size();row++) {
 			for(int col = 0; col<histogram.get(0).size();col++) {
-				int grey = (int)Math.floor((histogram.get(row).get(col)/pixelamount)*255);
+				int grey = (int)Math.floor(histogram.get(row).get(col)*255);
 				int r = grey;
 				int g = grey;
 				int b = grey;
@@ -138,10 +138,5 @@ public final class Utilities
 			}
 		}
 		return image;
-	}
-
-	private static int floor(double d) {
-		// TODO Auto-generated method stub
-		return 0;
 	}
 }
