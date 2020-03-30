@@ -45,8 +45,13 @@ public class Controller extends JPanel{
 	private Slider slider;
 	
 	@FXML
+	private Slider mode;
+	
+	@FXML
 	private Text imageTitle;
 	
+	@FXML
+	private Text modeText;
 	
 	private Mat image;
 	private double[][][] stiRows; //colsxframesxrgb sti
@@ -59,7 +64,7 @@ public class Controller extends JPanel{
 	ArrayList<ArrayList<Double>> rowI;
 	ArrayList<ArrayList<Double>> colI;
 	
-	private XYChart.Series<String, Number> series;
+	private boolean canViewBothModes = false;
 	
 	private int numberOfFrames=0;
 	private int cropWidth = 32;
@@ -88,23 +93,8 @@ public class Controller extends JPanel{
 	
 	@FXML
 	private void initialize() {
-		// Optional: You should modify the logic so that the user can change these values
-		// You may also do some experiments with different values
-
-		sampleRate = 8000;
-		sampleSizeInBits = 8;
-		numberOfChannels = 1;
 		numberOfFrames = 0;
-		
-		numberOfQuantizionLevels = 16;
-		
-		numberOfSamplesPerColumn = 500;
-		
-		series = new XYChart.Series<>();
-
 	}
-	
-
 	//grabs every frame and creates STI
 	protected void createStiFromVideo() throws InterruptedException {
 		 if (capture != null && capture.isOpened()) { // the video must be open
@@ -114,6 +104,9 @@ public class Controller extends JPanel{
 		 slider.setMajorTickUnit(frameSubTime);
 		 slider.setShowTickMarks(true);
 		 slider.setShowTickLabels(true);
+		 
+		 if(mode.getValue()==0) modeText.setText("Using Rows");
+		 else modeText.setText("Using Columns");
 	
 		 totalFrames = (int)capture.get(Videoio.CAP_PROP_FRAME_COUNT);
 		 stiCols = new double[32][totalFrames][3]; //32 x #frames x rgb middle columns
@@ -128,29 +121,39 @@ public class Controller extends JPanel{
 		 public void run() { 
 			 Mat frame = new Mat();
 			 if (capture.read(frame)) { // decode successfully				 
-
-				 totalFrameCount = capture.get(Videoio.CAP_PROP_FRAME_COUNT);
 				 image = frame;
 				 double currentFrameNumber = capture.get(Videoio.CAP_PROP_POS_FRAMES);
-				 slider.setValue(currentFrameNumber / totalFrameCount * (slider.getMax() - slider.getMin()));
+				 slider.setValue(currentFrameNumber / totalFrames * (slider.getMax() - slider.getMin()));
 				 updateSti(); //update sti images
 				 createChromaticityFrame(); //create a chroma data version of the frame
-				
-				numberOfFrames++;
+				 numberOfFrames++;
+				 
+				 //load video frame to the ui
+				 javafx.scene.image.Image im = Utilities.mat2Image(image);
+				 Utilities.onFXThread(imageView.imageProperty(), im);
 				 
 			 } else { // reach the end of the video
 				 capture.release();
 				 capture.set(Videoio.CAP_PROP_POS_FRAMES, 0);
 				 capture = null;
-				 
-				 //display the sti using middle rows
-				 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiRows);
-				 Utilities.onFXThread(imageView.imageProperty(), im);
-			
-				 //display the sti histogram using row histogram intersection
 				 chromaHistogramIntersection();
-				 javafx.scene.image.Image im2 = Utilities.histogram2DArray2Image(rowI);
-				 Utilities.onFXThread(histView.imageProperty(), im2);
+				 canViewBothModes = true;
+				 if(mode.getValue() == 0) { //we are in row mode
+					 //display the sti using middle rows
+					 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiRows);
+					 Utilities.onFXThread(imageView.imageProperty(), im);
+					//display the sti using middle rows
+					 javafx.scene.image.Image im2 = Utilities.histogram2DArray2Image(rowI);
+					 Utilities.onFXThread(histView.imageProperty(), im2);
+				 }
+				 else {//we are in col mode
+					 //display the sti using middle cols
+					 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiCols);
+					 Utilities.onFXThread(imageView.imageProperty(), im);
+					 //display the col intersection
+					 javafx.scene.image.Image im2 = Utilities.histogram2DArray2Image(colI);
+					 Utilities.onFXThread(histView.imageProperty(), im2);
+				 }
 				 
 				 timer.shutdown();
 			 }
@@ -253,8 +256,7 @@ public class Controller extends JPanel{
 		 Mat resizedImage = new Mat();
 		 Imgproc.resize(image, resizedImage, new Size(cropWidth, cropHeight));
 		 
-			javafx.scene.image.Image im = Utilities.mat2Image(resizedImage);
-			Utilities.onFXThread(imageView.imageProperty(), im);
+
 	
 		//write middle column as sti's column
 		for(int i = 0; i < resizedImage.rows();i++) {
@@ -291,7 +293,6 @@ public class Controller extends JPanel{
 	@FXML
 	protected void playImage(ActionEvent event) throws LineUnavailableException {
 		System.out.println("play button pressed");
-		series.getData().clear(); // clear graph data if any
 		if (isVideo) {
 			try {
 				createStiFromVideo();
@@ -299,8 +300,31 @@ public class Controller extends JPanel{
 				e.printStackTrace();
 			}
 		} else {
-			// do nothing.
-
+			imageTitle.setText("Image selected: you cannot play images. Please re-run application and try again.");
+		}
+	}
+	
+	@FXML
+	protected void changeMode(ActionEvent event) throws LineUnavailableException {
+		if(canViewBothModes) {
+			 if(mode.getValue() == 0) { //we are in row mode
+				 //display the sti using middle rows
+				 modeText.setText("Using Rows");
+				 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiRows);
+				 Utilities.onFXThread(imageView.imageProperty(), im);
+				//display the sti using middle rows
+				 javafx.scene.image.Image im2 = Utilities.histogram2DArray2Image(rowI);
+				 Utilities.onFXThread(histView.imageProperty(), im2);
+			 }
+			 else {//we are in col mode
+				 //display the sti using middle cols
+				 modeText.setText("Using Columns");
+				 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiCols);
+				 Utilities.onFXThread(imageView.imageProperty(), im);
+				 //display the col intersection
+				 javafx.scene.image.Image im2 = Utilities.histogram2DArray2Image(colI);
+				 Utilities.onFXThread(histView.imageProperty(), im2);
+			 }		
 		}
 	}
 	

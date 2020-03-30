@@ -10,61 +10,30 @@
 <?import javafx.scene.text.Text?>
 
 <BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="446.0" prefWidth="707.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="application.Controller">
-   <bottom>
-      <VBox prefHeight="0.0" prefWidth="707.0" BorderPane.alignment="CENTER">
-         <children>
-            <HBox prefHeight="85.0" prefWidth="710.0">
-               <children>
- 				<Button mnemonicParsing="false" onAction="#openImage" prefHeight="40.0" prefWidth="100.0" text="Open">
-                     <HBox.margin>
-                        <Insets left="225.0" top="10.0" />
-                     </HBox.margin>
-                  </Button>
-                  <Button mnemonicParsing="false" onAction="#playImage" prefHeight="40.0" prefWidth="100.0" text="Play">
-                     <HBox.margin>
-                        <Insets left="20.0" top="10.0" />
-                     </HBox.margin>
-                  </Button>
-               </children>
-               <opaqueInsets>
-                  <Insets left="19.0" />
-               </opaqueInsets>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
-            </HBox>
-            <Text fx:id="imageTitle" strokeType="OUTSIDE" text="Title: " textAlignment="CENTER" wrappingWidth="456.638671875">
-               <VBox.margin>
-                  <Insets bottom="50.0" left="75.0" />
-               </VBox.margin>
-            </Text>
-         </children>
-         <opaqueInsets>
-            <Insets />
-         </opaqueInsets>
-         <BorderPane.margin>
-            <Insets top="20.0" />
-         </BorderPane.margin>
-      </VBox>
-   </bottom>
    <center>
       <VBox prefHeight="219.0" prefWidth="737.0" BorderPane.alignment="CENTER">
          <children>
             <HBox prefHeight="100.0" prefWidth="200.0">
                <children>
-                  <ImageView fx:id="imageView" fitHeight="270.0" fitWidth="360.0" pickOnBounds="true" preserveRatio="true">
+                  <ImageView fx:id="imageView" fitHeight="232.0" fitWidth="360.0" pickOnBounds="true" preserveRatio="true">
                      <HBox.margin>
                         <Insets />
                      </HBox.margin>
                   </ImageView>
-                  <ImageView fx:id="histView" fitHeight="271.0" fitWidth="344.0" pickOnBounds="true" preserveRatio="true" />
+                  <ImageView fx:id="histView" fitHeight="234.0" fitWidth="344.0" pickOnBounds="true" preserveRatio="true" />
                </children>
             </HBox>
-            <Slider fx:id="slider" prefHeight="14.0" prefWidth="507.0">
+            <Slider fx:id="slider" prefHeight="0.0" prefWidth="507.0">
                <VBox.margin>
                   <Insets left="100.0" right="100.0" />
                </VBox.margin>
             </Slider>
+            <Slider fx:id="mode" blockIncrement="1.0" majorTickUnit="1.0" max="1.0" minorTickCount="0" onDragDetected="#changeMode" onDragDone="#changeMode" onDragDropped="#changeMode" onDragEntered="#changeMode" onDragExited="#changeMode" onDragOver="#changeMode" onMouseDragEntered="#changeMode" onMouseDragExited="#changeMode" onMouseDragOver="#changeMode" onMouseDragReleased="#changeMode" prefHeight="14.0" prefWidth="167.0" showTickMarks="true" snapToTicks="true">
+               <VBox.margin>
+                  <Insets left="300.0" right="300.0" top="20.0" />
+               </VBox.margin>
+            </Slider>
+            <Text fx:id="modeText" strokeType="OUTSIDE" strokeWidth="0.0" text="choose mode: Row or Column" textAlignment="CENTER" wrappingWidth="700.0" />
          </children>
          <BorderPane.margin>
             <Insets top="10.0" />
@@ -79,5 +48,36 @@
       </VBox>
    </children>
    </center>
+   <top>
+      <VBox prefHeight="16.0" prefWidth="707.0" BorderPane.alignment="CENTER">
+         <children>
+            <Text fx:id="imageTitle" strokeType="OUTSIDE" text="Title: " textAlignment="CENTER" wrappingWidth="700.0">
+               <VBox.margin>
+                  <Insets bottom="20.0" />
+               </VBox.margin>
+            </Text>
+            <HBox prefHeight="42.0" prefWidth="707.0">
+               <children>
+ 				<Button mnemonicParsing="false" onAction="#openImage" prefHeight="40.0" prefWidth="100.0" text="Open">
+                     <HBox.margin>
+                        <Insets left="250.0" />
+                     </HBox.margin>
+                  </Button>
+                  <Button mnemonicParsing="false" onAction="#playImage" prefHeight="40.0" prefWidth="100.0" text="Play">
+                     <HBox.margin>
+                        <Insets left="20.0" />
+                     </HBox.margin>
+                  </Button>
+               </children>
+               <opaqueInsets>
+                  <Insets left="19.0" />
+               </opaqueInsets>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
+            </HBox>
+         </children>
+      </VBox>
+   </top>
 
 </BorderPane>
