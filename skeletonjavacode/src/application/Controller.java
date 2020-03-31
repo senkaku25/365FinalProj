@@ -63,6 +63,10 @@ public class Controller extends JPanel{
 	private int[][] stiColsChromHistogram;
 	ArrayList<ArrayList<Double>> rowI;
 	ArrayList<ArrayList<Double>> colI;
+	ArrayList<ArrayList<Double>> colHistSTI;
+	
+	private double thresholdValue = 0.8;
+	
 	
 	private boolean canViewBothModes = false;
 	
@@ -114,6 +118,7 @@ public class Controller extends JPanel{
 		 chromaFrames = new double[totalFrames][32][32][2]; //#frames x (32x32 frame) x 2 chroma colors
 		 rowI = new ArrayList<ArrayList<Double>>(); //row intersection: 32 x #frames
 		 colI = new ArrayList<ArrayList<Double>>(); //col intersection: 32 x #frames
+		 colHistSTI = new ArrayList<ArrayList<Double>>();
 		 
 		 // create a runnable to fetch new frames periodically
 		Runnable frameGrabber = new Runnable() {
@@ -183,7 +188,7 @@ public class Controller extends JPanel{
 	     chooser.setCurrentDirectory(new java.io.File("."));
 	     chooser.setDialogTitle(choosertitle);
 	     FileNameExtensionFilter filter = new FileNameExtensionFilter(
-	        "JPG, PNG, GIF, and MP4", "jpg", "gif", "png", "mp4");
+	        "JPG, PNG, GIF, and MP4", "jpg", "gif", "png", "mp4","avi");
 	     chooser.setFileFilter(filter);
 	     chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 	    
@@ -226,7 +231,7 @@ public class Controller extends JPanel{
 		slider.setShowTickMarks(true);
 		slider.setShowTickLabels(true);
 		
-		if(filename.contains(".mp4")) {
+		if(filename.contains(".mp4")||filename.contains(".avi")) {
 			isVideo=true;
 			image=null;
 			if(capture != null) {
@@ -343,6 +348,7 @@ public class Controller extends JPanel{
 				rowHistograms.add(histogram);
 			}
 			ArrayList<Double> rowIntersect = getHistogramsIntersection(rowHistograms);	
+			threshold(rowIntersect);
 			rowI.add(rowIntersect);
 		}
 		//for each col c, make a histogram of it for every frame
@@ -355,7 +361,19 @@ public class Controller extends JPanel{
 				colHistograms.add(histogram);
 			}
 			ArrayList<Double> colIntersect = getHistogramsIntersection(colHistograms);
+			threshold(colIntersect);
 			colI.add(colIntersect);
+		}
+	}
+	
+	protected void threshold(ArrayList<Double> intersect) {
+		for(int i = 0 ; i < intersect.size();i++) {
+			double value = intersect.get(i);
+			if(value < thresholdValue) {
+				intersect.set(i,0.0);
+			}else {
+				intersect.set(i, 1.0);
+			}
 		}
 	}
 	
@@ -421,4 +439,5 @@ public class Controller extends JPanel{
 			}
 			return intersection;
 	}
+	
 }
