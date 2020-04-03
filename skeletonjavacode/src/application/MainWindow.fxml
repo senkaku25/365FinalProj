@@ -79,5 +79,12 @@
          </children>
       </VBox>
    </top>
+   <bottom>
+      <Button fx:id="download" mnemonicParsing="false" onAction="#downloadImage" prefHeight="26.0" prefWidth="219.0" text="Download Images" visible="false" BorderPane.alignment="CENTER">
+         <BorderPane.margin>
+            <Insets bottom="30.0" />
+         </BorderPane.margin>
+      </Button>
+   </bottom>
 
 </BorderPane>

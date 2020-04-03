@@ -15,7 +15,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Slider;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
 import javafx.scene.chart.LineChart;
@@ -25,12 +27,15 @@ import utilities.Utilities;
 import javax.swing.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.filechooser.*;
+
+import java.awt.image.BufferedImage;
 import java.io.*;
 
 public class Controller extends JPanel{
@@ -53,6 +58,9 @@ public class Controller extends JPanel{
 	@FXML
 	private Text modeText;
 	
+	@FXML
+	private Button download;
+	
 	private Mat image;
 	private double[][][] stiRows; //colsxframesxrgb sti
 	private double[][][] stiCols; //rowsxframesxrgb sti
@@ -64,6 +72,10 @@ public class Controller extends JPanel{
 	ArrayList<ArrayList<Double>> rowI;
 	ArrayList<ArrayList<Double>> colI;
 	ArrayList<ArrayList<Double>> colHistSTI;
+	
+	//mats for download
+	private Mat stiMid;
+	private Mat stiHist;
 	
 	private double thresholdValue = 0.8;
 	
@@ -143,21 +155,25 @@ public class Controller extends JPanel{
 				 capture = null;
 				 chromaHistogramIntersection();
 				 canViewBothModes = true;
+				 download.setVisible(true);
 				 if(mode.getValue() == 0) { //we are in row mode
 					 //display the sti using middle rows
+					 stiMid = Utilities.doubleArray2Mat(stiRows);
+					 stiHist = Utilities.histogram2DArray2Mat(rowI);
 					 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiRows);
-					 Utilities.onFXThread(imageView.imageProperty(), im);
-					//display the sti using middle rows
 					 javafx.scene.image.Image im2 = Utilities.histogram2DArray2Image(rowI);
+					 Utilities.onFXThread(imageView.imageProperty(), im);
 					 Utilities.onFXThread(histView.imageProperty(), im2);
 				 }
 				 else {//we are in col mode
 					 //display the sti using middle cols
 					 javafx.scene.image.Image im = Utilities.doubleArray2Image(stiCols);
 					 Utilities.onFXThread(imageView.imageProperty(), im);
+					 stiMid = Utilities.doubleArray2Mat(stiCols);
 					 //display the col intersection
 					 javafx.scene.image.Image im2 = Utilities.histogram2DArray2Image(colI);
 					 Utilities.onFXThread(histView.imageProperty(), im2);
+					 stiHist = Utilities.histogram2DArray2Mat(colI);
 				 }
 				 
 				 timer.shutdown();
@@ -215,6 +231,11 @@ public class Controller extends JPanel{
 
 	}
 	
+	@FXML
+	protected void downloadImage(ActionEvent event) throws InterruptedException {
+			Imgcodecs.imwrite( "resources/mid.jpg", stiMid);
+			Imgcodecs.imwrite( "resources/hist.jpg", stiHist);
+	}
 	
 	@FXML
 	protected void openImage(ActionEvent event) throws InterruptedException {
@@ -261,8 +282,6 @@ public class Controller extends JPanel{
 		 Mat resizedImage = new Mat();
 		 Imgproc.resize(image, resizedImage, new Size(cropWidth, cropHeight));
 		 
-
-	
 		//write middle column as sti's column
 		for(int i = 0; i < resizedImage.rows();i++) {
 			stiCols[i][numberOfFrames] = resizedImage.get(i,(int) Math.floor(cropWidth/2));

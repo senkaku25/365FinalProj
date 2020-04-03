@@ -5,7 +5,10 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.util.ArrayList;
 
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
+import org.opencv.imgcodecs.Imgcodecs;
 
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
@@ -53,6 +56,36 @@ public final class Utilities
 			System.err.println("Cannot convert the double array: " + e);
 			return null;			
 		}
+	}
+	
+	public static Mat histogram2DArray2Mat(ArrayList<ArrayList<Double>> histogram) {
+		try {
+			BufferedImage bi = Histogram2DToBufferedImage(histogram);
+			byte[] pixels = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
+			Mat m = new Mat(bi.getHeight(),bi.getWidth(), CvType.CV_8UC3);
+			m.put(0, 0, pixels);
+			return m;
+		}
+		catch (Exception e)
+		{
+			System.err.println("Cannot convert the histogram array to mat: " + e);
+			return null;			
+		}	
+	}
+	
+	public static Mat doubleArray2Mat(double[][][] frame) {
+		try {
+			BufferedImage bi = DoubleListToBufferedImage(frame);
+			byte[] pixels = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
+			Mat m = new Mat(bi.getHeight(),bi.getWidth(), CvType.CV_8UC3);
+			m.put(0, 0, pixels);
+			return m;
+		}
+		catch (Exception e)
+		{
+			System.err.println("Cannot convert the double array to mat: " + e);
+			return null;			
+		}	
 	}
 	
 	public static Image histogram2DArray2Image(ArrayList<ArrayList<Double>> histogram) {
@@ -112,7 +145,7 @@ public final class Utilities
 	}
 	
 	private static BufferedImage DoubleListToBufferedImage(double[][][] original) {
-		BufferedImage image = new BufferedImage(original[0].length, original.length, BufferedImage.TYPE_INT_RGB);
+		BufferedImage image = new BufferedImage(original[0].length, original.length, BufferedImage.TYPE_3BYTE_BGR);
 		for(int x = 0; x< original.length;x++) {
 			for(int y = 0; y<original[0].length;y++) {
 				int r = (int)original[x][y][0]; 
@@ -126,7 +159,7 @@ public final class Utilities
 	}
 	
 	private static BufferedImage Histogram2DToBufferedImage(ArrayList<ArrayList<Double>> histogram) {
-		BufferedImage image = new BufferedImage(histogram.get(0).size(), histogram.size(), BufferedImage.TYPE_INT_RGB);
+		BufferedImage image = new BufferedImage(histogram.get(0).size(), histogram.size(), BufferedImage.TYPE_3BYTE_BGR);
 		for(int row = 0; row< histogram.size();row++) {
 			for(int col = 0; col<histogram.get(0).size();col++) {
 				int grey = (int)Math.floor(histogram.get(row).get(col)*255);
